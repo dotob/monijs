@@ -37,8 +37,8 @@ class TimeItem
 		minutes = now.Minute - (now.Minute % 15)
 		new TimeItem now.Hour, minutes
 
-	@is_between: (from, to) ->
-		@.is_bigger_than from and @.is_smaller_than to
+	is_between: (from, to) ->
+		@.is_bigger_than(from) and @.is_smaller_than(to)
 
 	@parse: (s) ->
 		if !S(s).isEmpty()
@@ -78,31 +78,35 @@ class TimeItem
 		if minutes < 0
 			partBeforeKomma++
 			minutes += 60
-		new TimeItem(@our - partBeforeKomma, minutes)
+		new TimeItem(@hour - partBeforeKomma, minutes)
 
 	@difference: (a, b) ->
 		if a? and b?
 			if a.is_equal b
 				return 0
-			if a.is_bigger_than a
+			if b.is_bigger_than a
 				return @difference b, a
-			# do the real math, we know a is smaller than b here
+			# do the real math, we know a is bigger than b here
 			if a.hour == b.hour
-				return (b.minute - a.minute) / 60
-			minutes = 60 - a.minute + b.minute
-			hours = b.hour - (a.hour + 1) # +1 because we took the minutes from the started hour into minutes
+				return (a.minute - b.minute) / 60
+
+			minutes = 60 - b.minute + a.minute
+			hours = a.hour - b.hour - 1 # -1 because we took the minutes from the started hour into minutes
 			return (hours * 60 + minutes) / 60
 		0
 
 	to_string: () ->
-		"#{@hour}:#{@minute}"
+		m = "0#{@minute}".slice(-2)
+		"#{@hour}:#{m}"
 
 	to_monlist_string: () ->
-		"#{@hour}:#{@minute}"
+		h = "0#{@hour}".slice(-2)
+		m = "0#{@minute}".slice(-2)
+		"#{h}:#{m}"
 
 	to_short_string: () ->
 		if @minute == 0
-			"#{@hour}"
-		@.to_String()
+			return "#{@hour}"
+		@.to_string()
 
 module.exports = TimeItem	
