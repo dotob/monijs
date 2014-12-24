@@ -5,58 +5,64 @@ class TimeItem
 
 	constructor: (@hour, @minute=0) ->
 		if @hour > 24
-			throw "hour darf nicht größer als 24 sein"
+			throw new Error("hour darf nicht größer als 24 sein")
 		if @hour < 0
-			throw "hour darf nicht kleiner als 0 sein"
+			throw new Error("hour darf nicht kleiner als 0 sein")
 		if @minute > 60
-			throw "minute darf nicht größer als 60 sein"
+			throw new Error("minute darf nicht größer als 60 sein")
 		if @minute < 0
-			throw "minute darf nicht kleiner als 0 sein"
+			throw new Error("minute darf nicht kleiner als 0 sein")
 		
 		if @minute > 60
 			@hour += 1
 			@minute = 0
 
-	is_bigger_than = (other) ->
+	is_bigger_than: (other) ->
 		if @hour == other.hour
 			@minute > other.minute
 		else
 			@hour > other.hour
 
-	is_smaller_than = (other) ->
+	is_smaller_than: (other) ->
 		if @hour == other.hour
 			@minute < other.minute
 		else
 			@hour < other.hour
 
-	is_equal = (other) ->
+	is_equal: (other) ->
 		@hour==other.hour and @minute==other.minute
 
-	@now = () ->
+	@now: () ->
 		now = new Date()
 		minutes = now.Minute - (now.Minute % 15)
 		new TimeItem now.Hour, minutes
 
-	@is_between = (from, to) ->
+	@is_between: (from, to) ->
 		@.is_bigger_than from and @.is_smaller_than to
 
-	@parse = (s) ->
+	@parse: (s) ->
 		if !S(s).isEmpty()
-			parts = _.select(s.split(':'), p => S(s).Trim().s)
+			parts = _.select(s.split(':'), (p) => S(p).trim().s)
 			if _.any(parts)
 				hour = S(parts[0]).toInt()
-				if parts.count() > 1
+				if parts.length > 1
 					min = S(parts[1]).toInt()
 					new TimeItem(hour, min)
 				else
-					if hour > 100 and hour <= 2400
-						#success = TryParse(hour.ToString("00:00"), out ti)
+					if hour > 100 and hour < 1000
+						h = "#{hour}"
+						hs = "#{h[0...1]}:#{h[1..3]}"
+						TimeItem.parse hs
+					else if hour > 100 and hour <= 2400
+						h = "#{hour}"
+						hs = "#{h[0..1]}:#{h[2..4]}"
+						TimeItem.parse hs
 					else
 						new TimeItem(hour, 0)
 		else
 			null
 
-	add = (hours) ->
+	add: (hours) ->
 		partBeforeKomma = Math.floor hours
 		partAfterKomma = hours - partBeforeKomma
 		minutes = Math.round(partAfterKomma * 60) + @minute
@@ -65,7 +71,7 @@ class TimeItem
 			minutes -= 60
 		new TimeItem(@hour + partBeforeKomma, minutes)
 
-	subtract = (hours) ->
+	subtract: (hours) ->
 		partBeforeKomma = Math.floor hours
 		partAfterKomma = hours - partBeforeKomma
 		minutes = @minute - Math.round(partAfterKomma * 60)
@@ -74,7 +80,7 @@ class TimeItem
 			minutes += 60
 		new TimeItem(@our - partBeforeKomma, minutes)
 
-	@difference = (a, b) ->
+	@difference: (a, b) ->
 		if a? and b?
 			if a.is_equal b
 				return 0
@@ -88,13 +94,13 @@ class TimeItem
 			return (hours * 60 + minutes) / 60
 		0
 
-	to_string = () ->
+	to_string: () ->
 		"#{@hour}:#{@minute}"
 
-	to_monlist_string = () ->
+	to_monlist_string: () ->
 		"#{@hour}:#{@minute}"
 
-	to_short_string = () ->
+	to_short_string: () ->
 		if @minute == 0
 			"#{@hour}"
 		@.to_String()
