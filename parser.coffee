@@ -25,7 +25,7 @@ class WorkDayParser
 	parse: (userInput, wdToFill) ->
 		# remove newlines
 		userInput = S(userInput).replaceAll('\n', '').s
-		[wholeDayShortcut, userInput] = @preProcessWholeDayExpansion(userInput, wdToFill.DateTime, wholeDayShortcut)
+		[wholeDayShortcut, userInput] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime(), wholeDayShortcut)
 		
 		# check for // and remove it (remember it was there)
 		ignoreBreakSettings = userInput.startsWith(automaticPauseDeactivation)
@@ -45,7 +45,7 @@ class WorkDayParser
 				if _.any(wdItemsAsString)
 					tmpList = []
 					for wdItemString in wdItemsAsString
-						[workItem, error] = @getWDTempItem(wdItemString, wdToFill.DateTime, wholeDayShortcut)
+						[workItem, error] = @getWDTempItem(wdItemString, wdToFill.dateTime(), wholeDayShortcut)
 						if workItem?
 							tmpList.push(workItem)
 						else
@@ -56,9 +56,9 @@ class WorkDayParser
 					resultList = []
 					[resultList, error] = @processTempWorkItems(dayStartTime, tmpList, ignoreBreakSettings)
 					if _.any(resultList)
-						wdToFill = []
+						wdToFill.clear()
 						for workItem in resultList
-							wdToFill.AddWorkItem(workItem)
+							wdToFill.addWorkItem(workItem)
 						ret.Success = true
 					else
 						ret.Error = error
