@@ -7,8 +7,8 @@ class WorkDay
 
 	constructor: (@year, @month, @day, @specialDays) ->
 		@m = moment([@year, @month, @day])
-		@dayOfWeek = m.day() # sunday = 0, saturday = 6
-		[@dayType, @specialDay] = this.calculateDayType(m, dayOfWeek, specialDays)
+		@dayOfWeek = @m.day() # sunday = 0, saturday = 6
+		[@dayType, @specialDay] = this.calculateDayType(@m, @dayOfWeek, @specialDays)
 
 	calculateDayType: (dt, dayOfWeek, specialDays) ->
 		if specialDays?

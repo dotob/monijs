@@ -20,7 +20,7 @@ class StringParserUtils
 	# <param name = "token">index of token to use, this is 1-based</param>
 	# <param name="fallback">what will be returned if separator is not found</param>
 	# <returns></returns>
-	@token: (s, separator, token, fallback) ->
+	@token: (s, separator, token, fallback='') ->
 		if !S(s).isEmpty() && S(s).contains(separator)
 			tokens = s.split(separator)
 			if token > 0
@@ -55,8 +55,6 @@ class StringParserUtils
 	# <param name = "separator">the separator the split is done with</param>
 	# <param name = "token">index of token to use, this is 1-based</param>
 	# <returns></returns>
-	@token: (s, separator, token) ->
-		@token(s, separator, token, '')
 
 	@splitOnFirst: (s, separator) ->
 		if !S(s).isEmpty()

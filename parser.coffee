@@ -16,7 +16,9 @@ class WorkDayParser
 	pauseChar = '!'
 	projectPositionSeparator = '-'
 	automaticPauseDeactivation = "//"
-	settings
+	#before:
+	#settings
+	settings={}
 
 	constructor: (@settings) ->
 
@@ -24,8 +26,10 @@ class WorkDayParser
 
 	parse: (userInput, wdToFill) ->
 		# remove newlines
+		
 		userInput = S(userInput).replaceAll('\n', '').s
-		[wholeDayShortcut, userInput] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime(), wholeDayShortcut)
+		
+		[userInput, wholeDayShortcut] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime(), wholeDayShortcut)
 		
 		# check for // and remove it (remember it was there)
 		ignoreBreakSettings = userInput.startsWith(automaticPauseDeactivation)
@@ -49,8 +53,8 @@ class WorkDayParser
 						if workItem?
 							tmpList.push(workItem)
 						else
-							ret.Error = error
-							ret.Success = false
+							ret.error = error
+							ret.succes = false
 							# todo: fail fast??
 
 					resultList = []
@@ -59,22 +63,22 @@ class WorkDayParser
 						wdToFill.clear()
 						for workItem in resultList
 							wdToFill.addWorkItem(workItem)
-						ret.Success = true
+						ret.succes = true
 					else
-						ret.Error = error
+						ret.error = error
 				else
 					# this is no error for now
-					ret.Success = true
-					ret.Error = "Noch keine Einträge gemacht"
+					ret.succes = true
+					ret.error = "Noch keine Einträge gemacht"
 			else
-				ret.Error = error
+				ret.error = error
 		else
-			ret.Error = "Noch keine Eingabe"
+			ret.error = "Noch keine Eingabe"
 		ret
 
 	preProcessWholeDayExpansion: (userInput, dateTime) ->
 		if @settings?
-			currentShortcuts = @settings.GetValidShortCuts(dateTime)
+			currentShortcuts = @settings.getValidShortCuts(dateTime)
 			if _.any(currentShortcuts, (sc) -> sc.WholeDayExpansion)
 				dic = _.filter(currentShortcuts, (sc) -> sc.WholeDayExpansion).first((sc) -> sc.Key == userInput)
 				if dic?
@@ -230,8 +234,9 @@ class WorkDayParser
 		newString
 
 class WorkDayParserResult
-	success: false
-	error: ''
+	constructor: () ->
+		@success= false
+		@error= ''
 
 class WorkItemTemp
 	constructor: (@originalString) ->
