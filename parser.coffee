@@ -123,10 +123,10 @@ class WorkDayParser
 			try
 				# check for pause
 				if workItemTemp.isPause
-					if workItemTemp.desiredEnttime?
-						lastTime = workItemTemp.desiredEnttime
+					if workItemTemp.desiredEndtime?
+						lastTime = workItemTemp.desiredEndtime
 					else
-						lastTime.add(workItemTemp.hourCount)
+						lastTime = lastTime.add(workItemTemp.hourCount)
 				else
 					endTimeMode = false # if endTimeMode do not add, but substract break!
 					
