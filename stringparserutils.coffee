@@ -61,7 +61,7 @@ class StringParserUtils
 			if !S(separator).isEmpty()
 				idx = s.indexOf(separator)
 				if idx >= 0
-					return [s.Substring(0, idx), s.Substring(idx + separator.Length)]
+					return [s.substring(0, idx), s.substring(idx + separator.Length)]
 				return [s, s]
 			return [s, s]
 		return ['', '']
@@ -71,7 +71,7 @@ class StringParserUtils
 			if !S(separator).isEmpty()
 				idx = s.lastIndexOf(separator)
 				if idx >= 0
-					return [s.Substring(0, idx), s.Substring(idx + separator.Length)]
+					return [s.substring(0, idx), s.substring(idx + separator.Length)]
 				return [s, s]
 			return [s, s]
 		return ['', '']
@@ -100,8 +100,9 @@ class StringParserUtils
 		if !separators?
 			throw new Error("separators")
 
-		if ignoreregions? or !_.any(ignoreregions)
+		if !ignoreregions? or !_.any(ignoreregions)
 			throw new Error("ignoreregions")
+
 
 		splitted = []
 		irStack = []
@@ -109,11 +110,13 @@ class StringParserUtils
 			tmp = ''
 			for c in s
 				irMatch = _.first(ignoreregions, (ir) -> ir.Start == c)
+				boo = _.any(separators, (sep) => sep == c);
+
 				if _.any(irStack) and irStack[0] == c
 					# found end of ignoreregion, remove last region info
 					irStack.pop()
 					tmp += c
-				else if irMatch?
+				else if !(S(irMatch).isEmpty)
 					# found start of ignoreregion
 					irStack.push(irMatch.End)
 					tmp += c

@@ -1,4 +1,5 @@
 moment = require 'moment'
+S = require 'string'
 
 class WorkDay
 	dayType: 'WORKDAY'
@@ -29,6 +30,7 @@ class WorkDay
 
 	# HACK
 	originalString: (o) ->
+		console.log "***************"
 		if o?
 			@oString = o
 			@isChanged = true
@@ -68,6 +70,7 @@ class WorkDay
 
 	addWorkItem: (workItem) ->
 		@items.push(workItem)
-		workItem.workDay = @
+		# !!!!!!!!!!!! JSON Problem !!!!!!!!!!
+		#workItem.workDay = @
 
 module.exports = WorkDay

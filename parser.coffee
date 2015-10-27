@@ -1,5 +1,9 @@
 _ = require 'lodash'
 S = require 'string'
+WorkItem = require ('./workitem')
+TimeItem = require ('./timeitem.coffee')
+ShortCut = require ('./shortcut.coffee')
+WorkDayParserSettings = require ('./workdayparsersetting')
 util = require('./stringparserutils')
 spu = util.spu
 IgnoreRegion = util.ir
@@ -9,6 +13,7 @@ DescriptionParserResult = dp.DescriptionParserResult
 
 class WorkDayParser
 
+	#Constants
 	dayStartSeparator = ','
 	hourProjectInfoSeparator = ';'
 	itemSeparator = ','
@@ -18,17 +23,19 @@ class WorkDayParser
 	automaticPauseDeactivation = "//"
 	#before:
 	#settings
-	settings={}
+	settings=null
 
 	constructor: (@settings) ->
 
 	@instance: ->
 
 	parse: (userInput, wdToFill) ->
-		# remove newlines
-		
+		console.log "Input: #{userInput}"
+
+		# remove newlines		
 		userInput = S(userInput).replaceAll('\n', '').s
 		
+		#check whole day shortcuts
 		[userInput, wholeDayShortcut] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime(), wholeDayShortcut)
 		
 		# check for // and remove it (remember it was there)
@@ -36,43 +43,65 @@ class WorkDayParser
 		if ignoreBreakSettings 
 			userInput = userInput.substring(2)
 
+		#return Object; if input is empty return an error
 		ret = new WorkDayParserResult()
 		if !S(userInput).isEmpty()
 			
 			# should be like "<daystarttime>,..."
 			# eg 7,... or 7:30,...
-			[dayStartTime, remainingString, error] = @getDayStartTime(userInput)
+			[dayStartTime, remainingString, success, error] = @getDayStartTime(userInput)
+			console.log "Startzeit: #{dayStartTime.hour}:#{dayStartTime.minute} S: #{success} E: #{error}"
+			
 			if dayStartTime
 				# proceed with parsing items
 				parts = spu.splitWithIgnoreRegions(remainingString, [itemSeparator], new IgnoreRegion('(',')'))
+				console.log "PARTS: #{parts[0]} + #{parts[1]}"
 				wdItemsAsString = _.filter(parts, (p) -> !S(p).isEmpty())
+
+				console.log "Split String: #{wdItemsAsString}"
+
 				if _.any(wdItemsAsString)
 					tmpList = []
 					for wdItemString in wdItemsAsString
-						[workItem, error] = @getWDTempItem(wdItemString, wdToFill.dateTime(), wholeDayShortcut)
+						console.log "Cur In Str: #{wdItemString}"
+						[workItem, success, error] = @getWDTempItem(wdItemString, wdToFill.dateTime(), wholeDayShortcut)
 						if workItem?
+							console.log "Push to tmpList: #{JSON.stringify(workItem)}"
 							tmpList.push(workItem)
 						else
+							console.log "Strange Error 123"
 							ret.error = error
-							ret.succes = false
+							ret.success = false
 							# todo: fail fast??
 
+					console.log "Temp List: #{JSON.stringify(tmpList)}"
 					resultList = []
-					[resultList, error] = @processTempWorkItems(dayStartTime, tmpList, ignoreBreakSettings)
+					[resultList, success, error] = @processTempWorkItems(dayStartTime, tmpList, ignoreBreakSettings)
+					
+					console.log "Result list: #{JSON.stringify(resultList)}"
+					console.log "Result 1: #{JSON.stringify(resultList[0])}"
+					console.log "Result 2: #{JSON.stringify(resultList[1])}"
+					console.log "Result 3: #{JSON.stringify(resultList[2])}"
+					console.log "Result 4: #{JSON.stringify(resultList[3])}"
+					console.log "Error:#{error}"
+
+					console.log "WorkDayObject: #{JSON.stringify(wdToFill)}"
+
 					if _.any(resultList)
 						wdToFill.clear()
 						for workItem in resultList
 							wdToFill.addWorkItem(workItem)
-						ret.succes = true
+						ret.success = true
 					else
 						ret.error = error
 				else
 					# this is no error for now
-					ret.succes = true
+					ret.success = true
 					ret.error = "Noch keine Einträge gemacht"
 			else
 				ret.error = error
 		else
+			console.log "Input empty"
 			ret.error = "Noch keine Eingabe"
 		ret
 
@@ -80,9 +109,9 @@ class WorkDayParser
 		if @settings?
 			currentShortcuts = @settings.getValidShortCuts(dateTime)
 			if _.any(currentShortcuts, (sc) -> sc.WholeDayExpansion)
-				dic = _.filter(currentShortcuts, (sc) -> sc.WholeDayExpansion).first((sc) -> sc.Key == userInput)
+				dic = _(currentShortcuts).filter((sc) -> sc.WholeDayExpansion).first((sc) -> sc.key == userInput).value
 				if dic?
-					return [dic.Expansion, dic]
+					return [dic.expansion, dic]
 		return [userInput, null]
 
 	processTempWorkItems: (dayStartTime, tmpList, ignoreBreakSettings) ->
@@ -93,42 +122,44 @@ class WorkDayParser
 		for workItemTemp in tmpList
 			try
 				# check for pause
-				if workItemTemp.IsPause
-					if workItemTemp.DesiredEndtime?
-						lastTime = workItemTemp.DesiredEndtime
+				if workItemTemp.isPause
+					if workItemTemp.desiredEnttime?
+						lastTime = workItemTemp.desiredEnttime
 					else
-						lastTime += workItemTemp.HourCount
+						lastTime.add(workItemTemp.hourCount)
 				else
 					endTimeMode = false # if endTimeMode do not add, but substract break!
-					currentEndTime
-					if workItemTemp.DesiredEndtime?
-						currentEndTime = workItemTemp.DesiredEndtime
+					
+					if workItemTemp.desiredEnttime?
+						currentEndTime = workItemTemp.desiredEnttime
 						endTimeMode = true
 					else
-						currentEndTime = lastTime + workItemTemp.HourCount
+						currentEndTime = lastTime.add(workItemTemp.hourCount)
 					# check for split
-					if @settings?.InsertDayBreak and !ignoreBreakSettings
+					if @settings?.insertDayBreak and !ignoreBreakSettings
 						# the break is in an item
-						if @settings.DayBreakTime.is_between(lastTime, currentEndTime)
-							# insert new item
-							resultListTmp.push(new WorkItem(lastTime, this.settings.DayBreakTime, workItemTemp.ProjectString, workItemTemp.PosString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
-							lastTime = @settings.DayBreakTime + @settings.DayBreakDurationInMinutes / 60
+						if @settings.dayBreakTime.is_between(lastTime, currentEndTime)
+							# insert new item        !!!!WorkItem!!!!
+							resultListTmp.push(new WorkItem(lastTime, this.settings.dayBreakTime, workItemTemp.projectString, workItemTemp.posString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
+							lastTime = @settings.dayBreakTime.add(@settings.dayBreakDurationInMinutes / 60)
+							console.log "+++ Last Time: #{JSON.stringify(lastTime)}"
 							if !endTimeMode
 								# fixup currentEndTime, need to add the dayshiftbreak
-								currentEndTime = currentEndTime + this.settings.DayBreakDurationInMinutes / 60
-						else if @settings.DayBreakTime == lastTime
-							lastTime = lastTime + @settings.DayBreakDurationInMinutes / 60
+								currentEndTime = currentEndTime.add(this.settings.dayBreakDurationInMinutes / 60)
+						else if @settings.dayBreakTime == lastTime
+							lastTime = lastTime.add(@settings.dayBreakDurationInMinutes / 60)
 							if !endTimeMode
-								currentEndTime = currentEndTime + @settings.DayBreakDurationInMinutes / 60
+								currentEndTime = currentEndTime.add(@settings.dayBreakDurationInMinutes / 60)
 					
-					resultListTmp.push(new WorkItem(lastTime, currentEndTime, workItemTemp.ProjectString, workItemTemp.PosString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
+					resultListTmp.push(new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
 					lastTime = currentEndTime
 					success = true
 			catch e
 				error = "Beim Verarbeiten von #{workItemTemp.OriginalString} ist dieser Fehler aufgetreten: #{e}"
 				success = false
 		resultList = resultListTmp
-		success
+		#success
+		[resultList, success, error]
 
 	getWDTempItem: (wdItemString, dateTime, wholeDayShortcut) ->
 		success = false
@@ -140,14 +171,14 @@ class WorkDayParser
 				ti = TimeItem.parse(wdItemString.substring(1, wdItemString.Length - 2))
 				if ti?
 					workItem = new WorkItemTemp(wdItemString)
-					workItem.DesiredEndtime = ti
-					workItem.IsPause = true
+					workItem.desiredEndtime = ti
+					workItem.isPause = true
 					success = true
 			else
 				pauseDuration = parseFloat(wdItemString.substring(0, wdItemString.Length - 1))
 				workItem = new WorkItemTemp(wdItemString)
-				workItem.HourCount = pauseDuration
-				workItem.IsPause = true
+				workItem.hourCount = pauseDuration
+				workItem.isPause = true
 				success = true
 		else
 			# workitem: <count of hours|-endtime>;<projectnumber>-<positionnumber>[(<description>)]
@@ -157,52 +188,56 @@ class WorkDayParser
 					ti = TimeItem.parse(timeString.substring(1))
 					if ti?
 						workItem = new WorkItemTemp(wdItemString)
-						workItem.DesiredEndtime = ti
+						workItem.desiredEnttime = ti
 					else
-						error = string.Format("Die Endzeit kann nicht erkannt werden: {0}", timeString)
+						error = string.Format("Die Endzeit kann nicht erkannt werden: #{timeString}")
 				else
 					hours = parseFloat(timeString)
 					workItem = new WorkItemTemp(wdItemString)
-					workItem.HourCount = hours
+					workItem.hourCount = hours
 				if workItem?
 					projectPosDescString = wdItemString.substring(wdItemString.indexOf(hourProjectInfoSeparator)+1).trim()
 					if !S(projectPosDescString).isEmpty()
 						# expand abbreviations
 						if @settings?
 							abbrevString = spu.tokenReturnInputIfFail(projectPosDescString, "(", 1).trim()
-							shortCut = _.filter(@settings.getValidShortCuts(dateTime), (s) -> !s.WholeDayExpansion).first((s) -> s.Key == abbrevString)
-							if shortCut?
-								workItem.ShortCut = shortCut
-								expanded = shortCut.Expansion
+
+							console.log "Search for "+abbrevString + "  All ShortCuts: " + JSON.stringify @settings.getValidShortCuts(dateTime)
+							shortCut = _.chain(@settings.getValidShortCuts(dateTime)).filter((s) -> !s.wholeDayExpansion).filter((s) -> s.key == abbrevString).value()
+							console.log "Result SC: #{JSON.stringify shortCut}"
+							if shortCut? && _.any(shortCut) # TODO why is shortCut an array??
+								console.log "@@@@shortCut: " + shortCut[0].key
+								workItem.shortCut = shortCut[0]
+								expanded = shortCut[0].expansion
 								# if there is an desc given use its value instead of the one in the abbrev
 								desc = DescriptionParser.parseDescription(projectPosDescString)
 								descExpanded = DescriptionParser.parseDescription(expanded)
-								if !S(desc.Description).isEmpty() and desc.UsedAppendDelimiter
+								if !S(desc.description).isEmpty() and desc.UsedAppendDelimiter
 									# append description in expanded
 									expanded = "#{descExpanded.BeforeDescription}(#{descExpanded.Description}#{desc.Description})"
-								else if !S(desc.Description).isEmpty()
+								else if !S(desc.description).isEmpty()
 									# replace to description in expanded
 									expanded = "#{descExpanded.BeforeDescription}(#{desc.Description})"
 								projectPosDescString = expanded
 							else if wholeDayShortcut?
-								workItem.ShortCut = wholeDayShortcut
+								workItemshortCut = wholeDayShortcut
 
 						projectPosString = spu.tokenReturnInputIfFail(projectPosDescString, "(", 1)
 						parts = _.map(projectPosString.split(projectPositionSeparator), (s) -> s.trim())
 						if _.any(parts)
-							workItem.ProjectString = parts[0]
-							workItem.PosString = if parts[1] then parts[1] else ''
+							workItem.projectString = parts[0]
+							workItem.posString = if parts[1] then parts[1] else ''
 							success = true
 						else
 							error = "Projektnummer kann nicht erkannt werden: #{projectPosDescString}"
 						descNoExpand = DescriptionParser.parseDescription(projectPosDescString)
 						if !S(descNoExpand.Description).isEmpty()
-							workItem.Description = descNoExpand.Description
+							workItem.description = descNoExpand.description
 					else
 						error = "Projektnummer ist leer: #{wdItemString}"
 			else
 				error = "Stundenanzahl kann nicht erkannt werden: #{wdItemString}"
-		success
+		[workItem, success, error]
 
 	getDayStartTime: (input) ->
 		success = false
@@ -220,7 +255,8 @@ class WorkDayParser
 			error = "no daystart found"
 			dayStartTime = null
 			remainingString = input
-		success
+		return [dayStartTime, remainingString, success, error]
+		#success
 
 	addCurrentTime: (originalString) ->
 		# test for daystart
@@ -249,5 +285,8 @@ class WorkItemTemp
 	description: null
 	originalString: null
 	shortCut: null
+
+	toString: () ->
+		"WorkItemTemp: isPause:#{@isPause}, hourCount:#{@hourCount}, desiredEndtime:#{@desiredEndtime}, projectString:#{@projectString}, posString:#{@posString}, description:#{@description}, originalString:#{@originalString}, shortCut:#{@shortCut}"
 
 module.exports = WorkDayParser

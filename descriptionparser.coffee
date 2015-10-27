@@ -7,15 +7,15 @@ class DescriptionParser
 		if !S(s).isEmpty()
 			if S(s).contains("(+")
 				[first, second] = spu.splitOnFirst(s, "(+")
-				ret.BeforeDescription = first
-				ret.Description = spu.SplitOnLast(second, ")")[0]
-				ret.UsedAppendDelimiter = true
+				ret.beforeDescription = first
+				ret.description = spu.splitOnLast(second, ")")[0]
+				ret.usedAppendDelimiter = true
 			else if S(s).contains("(")
 				[first, second] = spu.splitOnFirst(s, "(")
-				ret.BeforeDescription = first
-				ret.Description = spu.SplitOnLast(second, ")")[0]
+				ret.beforeDescription = first
+				ret.description = spu.splitOnLast(second, ")")[0]
 			else
-				ret.BeforeDescription = s
+				ret.beforeDescription = s
 		ret
 
 class DescriptionParserResult
