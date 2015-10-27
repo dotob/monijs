@@ -168,7 +168,7 @@ class WorkDayParser
 		# check for pause item
 		if S(wdItemString).endsWith(pauseChar)
 			if S(wdItemString).startsWith(endTimeStartChar)
-				ti = TimeItem.parse(wdItemString.substring(1, wdItemString.length - 2))
+				ti = TimeItem.parse(wdItemString.substring(1, wdItemString.length - 1))
 				if ti?
 					workItem = new WorkItemTemp(wdItemString)
 					workItem.desiredEndtime = ti
