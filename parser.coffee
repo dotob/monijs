@@ -168,14 +168,14 @@ class WorkDayParser
 		# check for pause item
 		if S(wdItemString).endsWith(pauseChar)
 			if S(wdItemString).startsWith(endTimeStartChar)
-				ti = TimeItem.parse(wdItemString.substring(1, wdItemString.Length - 2))
+				ti = TimeItem.parse(wdItemString.substring(1, wdItemString.length - 2))
 				if ti?
 					workItem = new WorkItemTemp(wdItemString)
 					workItem.desiredEndtime = ti
 					workItem.isPause = true
 					success = true
 			else
-				pauseDuration = parseFloat(wdItemString.substring(0, wdItemString.Length - 1))
+				pauseDuration = parseFloat(wdItemString.substring(0, wdItemString.length - 1))
 				workItem = new WorkItemTemp(wdItemString)
 				workItem.hourCount = pauseDuration
 				workItem.isPause = true
@@ -200,24 +200,26 @@ class WorkDayParser
 					if !S(projectPosDescString).isEmpty()
 						# expand abbreviations
 						if @settings?
-							abbrevString = spu.tokenReturnInputIfFail(projectPosDescString, "(", 1).trim()
+							abbrevStringNoComment = spu.tokenReturnInputIfFail(projectPosDescString, "(", 1).trim()
+							abbrevString = spu.tokenReturnInputIfFail(abbrevStringNoComment, "-", 1).trim()
+							posReplaceString = spu.token(abbrevStringNoComment, "-", 2).trim()
 
-							console.log "Search for "+abbrevString + "  All ShortCuts: " + JSON.stringify @settings.getValidShortCuts(dateTime)
 							shortCut = _.chain(@settings.getValidShortCuts(dateTime)).filter((s) -> !s.wholeDayExpansion).filter((s) -> s.key == abbrevString).value()
-							console.log "Result SC: #{JSON.stringify shortCut}"
 							if shortCut? && _.any(shortCut) # TODO why is shortCut an array??
-								console.log "@@@@shortCut: " + shortCut[0].key
 								workItem.shortCut = shortCut[0]
 								expanded = shortCut[0].expansion
 								# if there is an desc given use its value instead of the one in the abbrev
 								desc = DescriptionParser.parseDescription(projectPosDescString)
 								descExpanded = DescriptionParser.parseDescription(expanded)
-								if !S(desc.description).isEmpty() and desc.UsedAppendDelimiter
+								if !S(desc.description).isEmpty() and desc.usedAppendDelimiter
 									# append description in expanded
-									expanded = "#{descExpanded.BeforeDescription}(#{descExpanded.Description}#{desc.Description})"
+									expanded = "#{descExpanded.beforeDescription}(#{descExpanded.description}#{desc.description})"
 								else if !S(desc.description).isEmpty()
 									# replace to description in expanded
-									expanded = "#{descExpanded.BeforeDescription}(#{desc.Description})"
+									expanded = "#{descExpanded.beforeDescription}(#{desc.description})"
+								else
+									expanded = @replacePosIfNecessary(expanded, posReplaceString)
+
 								projectPosDescString = expanded
 							else if wholeDayShortcut?
 								workItemshortCut = wholeDayShortcut
@@ -238,6 +240,11 @@ class WorkDayParser
 			else
 				error = "Stundenanzahl kann nicht erkannt werden: #{wdItemString}"
 		[workItem, success, error]
+
+	replacePosIfNecessary: (bevoreDes, posReplacement) ->
+		if(!S(posReplacement).isEmpty())
+			return spu.token(bevoreDes,"-",1,bevoreDes) + "-" + posReplacement
+		bevoreDes
 
 	getDayStartTime: (input) ->
 		success = false

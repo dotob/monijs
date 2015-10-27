@@ -145,8 +145,8 @@ describe 'WorkDayParser', () ->
 		
 		expValue = [new WorkItem(new TimeItem(9), new TimeItem(11), "11111", "111"), 
 					new WorkItem(new TimeItem(11,0), new TimeItem(12,0), "33333", "333")]
-		workItemParserResult.success.should.equals(true)
 		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
 
 	it '12 WDParser_UseAbbreviationsReplacePosString_ExpandAbbreviations', () ->
 		wd = new WorkDay(1,1,1,null)
@@ -161,10 +161,23 @@ describe 'WorkDayParser', () ->
 
 		expValue = [new WorkItem(new TimeItem(9), new TimeItem(11), "11111", "444"), 
 					new WorkItem(new TimeItem(11,0), new TimeItem(12,0), "33333", "333")]
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '13 WDParser_InsertTimeIntervalPauseItem_LeavePause', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		
+		workItemParserResult = wdp.parse("7,1;11111-111,2!,2;11111-111", wd)
+
+		expValue = [new WorkItem(new TimeItem(7), new TimeItem(8), "11111", "111"), 
+					new WorkItem(new TimeItem(10,0), new TimeItem(12,0), "11111", "111")]
+
 		console.log "-------------------------"
 		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
-		console.log "Real Value:    " + JSON.stringify(wd.items)
-		console.log "Expected Value:" + JSON.stringify(expValue)
+		console.log "Parser: " + JSON.stringify(wd.items)
+		console.log "Should: " + JSON.stringify(expValue)
 		
-		workItemParserResult.success.should.equals(true)
 		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+		
