@@ -1,6 +1,10 @@
 should = require('chai').should()
 expect = require('chai').expect
 
+dp = require('../descriptionparser')
+DescriptionParser = dp.DescriptionParser
+DescriptionParserResult = dp.DescriptionParserResult
+
 WorkDayParser = require('../parser')
 ShortCut = require('../shortcut')
 WorkDay = require('../workDay');
@@ -236,12 +240,39 @@ describe 'WorkDayParser', () ->
 		wd = new WorkDay(1,1,1,null)
 		wdp = new WorkDayParser()
 
-		workItemParserResult = wdp.parse("9:15,7.25;11111-111(lalala)", wd)
+		workItemParserResult = wdp.parse("9:15,7.25;11111-111(lalala)", wd, true)
 
 		expValue = [new WorkItem(new TimeItem(9,15),
 								 new TimeItem(16,30), 
-								 "11111", "111", "lalala", undefined, "")]
+								 "11111", "111", "lalala", null, "7.25;11111-111(lalala)")]
 		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+		
+	it '20 WDParser_ParseDescriptionWithItemSeparator_GetDesc', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+
+		workItemParserResult = wdp.parse("9:15,7.25;11111-111(lal,ala)", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9,15),
+								 new TimeItem(16,30), 
+								 "11111", "111", "lal,ala", null, "7.25;11111-111(lal,ala)")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+
+	it '21 WDParser_ParseDescriptionWithDescriptionSeparator_GetDesc', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+
+		workItemParserResult = wdp.parse("9:15,7.25;11111-111(lal(123)ala)", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9,15),
+								 new TimeItem(16,30), 
+								 "11111", "111", "lal(123)ala", null, "7.25;11111-111(lal(123)ala)")]
 		console.log "-------------------------"
 		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
 		console.log "Parser: " + JSON.stringify(wd.items)
@@ -250,4 +281,3 @@ describe 'WorkDayParser', () ->
 		should.equal(true, _.isEqual(wd.items, expValue))
 		workItemParserResult.success.should.equals(true)
 
-		

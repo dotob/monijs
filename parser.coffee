@@ -29,7 +29,9 @@ class WorkDayParser
 
 	@instance: ->
 
-	parse: (userInput, wdToFill) ->
+	parse: (userInput, wdToFill, insertMetaData=false) ->
+		@insertMetaData = insertMetaData
+
 		console.log "Input: #{userInput}"
 
 		# remove newlines		
@@ -140,7 +142,7 @@ class WorkDayParser
 						# the break is in an item
 						if @settings.dayBreakTime.is_between(lastTime, currentEndTime)
 							# insert new item        !!!!WorkItem!!!!
-							resultListTmp.push(new WorkItem(lastTime, this.settings.dayBreakTime, workItemTemp.projectString, workItemTemp.posString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
+							resultListTmp.push(new WorkItem(lastTime, this.settings.dayBreakTime, workItemTemp.projectString, workItemTemp.posString))#, workItemTemp.description, workItemTemp.shortCut, workItemTemp.originalString))
 							lastTime = @settings.dayBreakTime.add(@settings.dayBreakDurationInMinutes / 60)
 							console.log "+++ Last Time: #{JSON.stringify(lastTime)}"
 							if !endTimeMode
@@ -151,11 +153,17 @@ class WorkDayParser
 							if !endTimeMode
 								currentEndTime = currentEndTime.add(@settings.dayBreakDurationInMinutes / 60)
 					
-					resultListTmp.push(new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString, workItemTemp.Description, workItemTemp.ShortCut, workItemTemp.OriginalString))
+					workItem = new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString)#, workItemTemp.description, workItemTemp.shortCut, workItemTemp.originalString))
+					if(@insertMetaData)
+						workItem.description = workItemTemp.description;
+						workItem.originalString = workItemTemp.originalString;
+						workItem.shortCut = workItemTemp.shortCut;
+					resultListTmp.push(workItem)
+
 					lastTime = currentEndTime
 					success = true
 			catch e
-				error = "Beim Verarbeiten von #{workItemTemp.OriginalString} ist dieser Fehler aufgetreten: #{e}"
+				error = "Beim Verarbeiten von #{workItemTemp.originalString} ist dieser Fehler aufgetreten: #{e}"
 				success = false
 		resultList = resultListTmp
 		#success
@@ -233,7 +241,7 @@ class WorkDayParser
 						else
 							error = "Projektnummer kann nicht erkannt werden: #{projectPosDescString}"
 						descNoExpand = DescriptionParser.parseDescription(projectPosDescString)
-						if !S(descNoExpand.Description).isEmpty()
+						if !S(descNoExpand.description).isEmpty()
 							workItem.description = descNoExpand.description
 					else
 						error = "Projektnummer ist leer: #{wdItemString}"

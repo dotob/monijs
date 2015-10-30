@@ -61,7 +61,7 @@ class StringParserUtils
 			if !S(separator).isEmpty()
 				idx = s.indexOf(separator)
 				if idx >= 0
-					return [s.substring(0, idx), s.substring(idx + separator.Length)]
+					return [s.substring(0, idx), s.substring(idx + separator.length)]
 				return [s, s]
 			return [s, s]
 		return ['', '']
@@ -71,7 +71,7 @@ class StringParserUtils
 			if !S(separator).isEmpty()
 				idx = s.lastIndexOf(separator)
 				if idx >= 0
-					return [s.substring(0, idx), s.substring(idx + separator.Length)]
+					return [s.substring(0, idx), s.substring(idx + separator.length)]
 				return [s, s]
 			return [s, s]
 		return ['', '']
@@ -109,16 +109,17 @@ class StringParserUtils
 		if !S(s).isEmpty()
 			tmp = ''
 			for c in s
-				irMatch = _.first(ignoreregions, (ir) -> ir.Start == c)
+				irMatch = _.first(ignoreregions, (ir) -> ir.start == c)
 				boo = _.any(separators, (sep) => sep == c);
+				#console.log "Current c: #{c} Stack: #{irStack} irMatch: #{JSON.stringify irMatch}"
 
 				if _.any(irStack) and irStack[0] == c
 					# found end of ignoreregion, remove last region info
 					irStack.pop()
 					tmp += c
-				else if !(S(irMatch).isEmpty)
+				else if irMatch[0]? #!(S(irMatch).isEmpty())
 					# found start of ignoreregion
-					irStack.push(irMatch.End)
+					irStack.push(irMatch[0].end)
 					tmp += c
 				else if _.any(separators, (sep) => sep == c) and !_.any(irStack)
 					# found valid separator, do split, but check if there are pending ignore regions in stack
