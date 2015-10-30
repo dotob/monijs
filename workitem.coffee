@@ -8,7 +8,7 @@ class WorkItem
 	projectPosition: () ->
 		#TODO
 
-
+	
 
 	hoursDuration: () ->
 		TimeItem.difference(@start, @end);

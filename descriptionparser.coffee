@@ -14,7 +14,6 @@ class DescriptionParser
 				[first, second] = spu.splitOnFirst(s, "(")
 				ret.beforeDescription = first
 				ret.description = spu.splitOnLast(second, ")")[0]
-				console.log ret.description
 			else
 				ret.beforeDescription = s
 		ret
