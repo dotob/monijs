@@ -421,9 +421,45 @@ describe 'WorkDayParser', () ->
 		expValue = [new WorkItem(new TimeItem(9), new TimeItem(12), 
 								 "11111", "111", "", ctb, "-14;ctb"),
 					new WorkItem(new TimeItem(12,30), new TimeItem(14), 
-								 "22222", "222", "", ctb, "-16;ktl"),
+								 "11111", "111", "", ctb, "-14;ctb"),
 					new WorkItem(new TimeItem(14), new TimeItem(16),
 								 "22222", "222", "", ktl, "-16;ktl")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '30 WDParser_BrokenHours_CalculateCorrectly', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		
+		workItemParserResult = wdp.parse("8:15,-15:30;11111-111,1;11111-111", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8,15), new TimeItem(15,30), 
+								 "11111", "111", "", null, "-15:30;11111-111"),
+					new WorkItem(new TimeItem(15,30), new TimeItem(16,30), 
+								 "11111", "111", "", null, "1;11111-111")]
+
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '31 WDParser_BrokenHoursWithBreak_CalculateCorrectly', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		settings.insertDayBreak = true
+		settings.dayBreakTime = new TimeItem(12)
+		settings.dayBreakDurationInMinutes = 30
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("8:15,-15:30;11111-111,1;11111-111", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8,15), new TimeItem(12), 
+								 "11111", "111", "", null, "-15:30;11111-111"),
+					new WorkItem(new TimeItem(12,30), new TimeItem(15,30), 
+								 "11111", "111", "", null, "-15:30;11111-111"),
+					new WorkItem(new TimeItem(15, 30), new TimeItem(16,30),
+								 "11111", "111", "", null, "1;11111-111")]
 		console.log "-------------------------"
 		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
 		console.log "Parser: " + JSON.stringify(wd.items)
@@ -431,3 +467,20 @@ describe 'WorkDayParser', () ->
 		
 		should.equal(true, _.isEqual(wd.items, expValue))
 		workItemParserResult.success.should.equals(true)
+
+	it '32 WDParser_PartEndsAtBreakTime_AddBreakCorrectly', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		settings.insertDayBreak = true
+		settings.dayBreakTime = new TimeItem(12)
+		settings.dayBreakDurationInMinutes = 30
+		wdp.settings = settings		
+
+		workItemParserResult = wdp.parse("8,4;11111-111,4;11111-111", wd, true)
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(12), 
+								 "11111", "111", "", null, "4;11111-111"),
+					new WorkItem(new TimeItem(12,30), new TimeItem(16,30), 
+								 "11111", "111", "", null, "4;11111-111")]
+
+		

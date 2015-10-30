@@ -142,9 +142,13 @@ class WorkDayParser
 						# the break is in an item
 						if @settings.dayBreakTime.is_between(lastTime, currentEndTime)
 							# insert new item        !!!!WorkItem!!!!
-							resultListTmp.push(new WorkItem(lastTime, this.settings.dayBreakTime, workItemTemp.projectString, workItemTemp.posString))#, workItemTemp.description, workItemTemp.shortCut, workItemTemp.originalString))
+							workItem = new WorkItem(lastTime, this.settings.dayBreakTime, workItemTemp.projectString, workItemTemp.posString);
+							if(@insertMetaData)
+								workItem.description = workItemTemp.description;
+								workItem.originalString = workItemTemp.originalString;
+								workItem.shortCut = workItemTemp.shortCut;
+							resultListTmp.push(workItem)
 							lastTime = @settings.dayBreakTime.add(@settings.dayBreakDurationInMinutes / 60)
-							console.log "+++ Last Time: #{JSON.stringify(lastTime)}"
 							if !endTimeMode
 								# fixup currentEndTime, need to add the dayshiftbreak
 								currentEndTime = currentEndTime.add(this.settings.dayBreakDurationInMinutes / 60)
@@ -153,7 +157,7 @@ class WorkDayParser
 							if !endTimeMode
 								currentEndTime = currentEndTime.add(@settings.dayBreakDurationInMinutes / 60)
 					
-					workItem = new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString)#, workItemTemp.description, workItemTemp.shortCut, workItemTemp.originalString))
+					workItem = new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString)
 					if(@insertMetaData)
 						workItem.description = workItemTemp.description;
 						workItem.originalString = workItemTemp.originalString;
