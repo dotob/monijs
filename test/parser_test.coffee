@@ -483,4 +483,9 @@ describe 'WorkDayParser', () ->
 					new WorkItem(new TimeItem(12,30), new TimeItem(16,30), 
 								 "11111", "111", "", null, "4;11111-111")]
 
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+		
+
 		
