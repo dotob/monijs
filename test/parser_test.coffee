@@ -339,6 +339,91 @@ describe 'WorkDayParser', () ->
 								 "11111", "444", "useme", ctb, "2;ctb-444(useme)"),
 					new WorkItem(new TimeItem(11), new TimeItem(13), 
 								 "22222", "222", "useme", ktl, "2;ktl")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '26 WDParser_UseAbbreviationsAndDesc_ExpandAbbreviationsAndAppendToDescFromAbbr', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		ctb = new ShortCut("ctb", "11111-111(prefix)")
+		ktl = new ShortCut("ktl", "22222-222(useme)")
+		settings.addShortCut(ctb)
+		settings.addShortCut(ktl)
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("9:00,2;ctb(+ suffix),2;ktl", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9), new TimeItem(11), 
+								 "11111", "111", "prefix suffix", ctb, "2;ctb(+ suffix)"),
+					new WorkItem(new TimeItem(11), new TimeItem(13), 
+								 "22222", "222", "useme", ktl, "2;ktl")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '27 WDParser_UseAbbreviationsAndDescAndPosReplace_ExpandAbbreviationsAndAppendToDescFromAbbr', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		ctb = new ShortCut("ctb", "11111-111(prefix)")
+		ktl = new ShortCut("ktl", "22222-222(useme)")
+		settings.addShortCut(ctb)
+		settings.addShortCut(ktl)
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("9:00,2;ctb-444(+ suffix),2;ktl", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9), new TimeItem(11), 
+								 "11111", "111", "prefix suffix", ctb, "2;ctb-444(+ suffix)"),
+					new WorkItem(new TimeItem(11), new TimeItem(13), 
+								 "22222", "222", "useme", ktl, "2;ktl")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '28 WDParser_InsteadOfHoursICanTellAnEndTime_UseEndTime', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		ctb = new ShortCut("ctb", "11111-111")
+		ktl = new ShortCut("ktl", "22222-222")
+		settings.addShortCut(ctb)
+		settings.addShortCut(ktl)
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("9:00,-12;ctb,-15;ktl", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9), new TimeItem(12), 
+								 "11111", "111", "", ctb, "-12;ctb"),
+					new WorkItem(new TimeItem(12), new TimeItem(15), 
+								 "22222", "222", "", ktl, "-15;ktl")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '29 WDParser_UsingEndTimeAndBreak_CalculateBreak', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		ctb = new ShortCut("ctb", "11111-111")
+		ktl = new ShortCut("ktl", "22222-222")
+		settings.addShortCut(ctb)
+		settings.addShortCut(ktl)
+		settings.insertDayBreak = true
+		settings.dayBreakTime = new TimeItem(12)
+		settings.dayBreakDurationInMinutes = 30
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("9:00,-14;ctb,-16;ktl", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(9), new TimeItem(12), 
+								 "11111", "111", "", ctb, "-14;ctb"),
+					new WorkItem(new TimeItem(12,30), new TimeItem(14), 
+								 "22222", "222", "", ctb, "-16;ktl"),
+					new WorkItem(new TimeItem(14), new TimeItem(16),
+								 "22222", "222", "", ktl, "-16;ktl")]
 		console.log "-------------------------"
 		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
 		console.log "Parser: " + JSON.stringify(wd.items)

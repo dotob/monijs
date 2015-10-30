@@ -224,7 +224,8 @@ class WorkDayParser
 									expanded = "#{descExpanded.beforeDescription}(#{descExpanded.description}#{desc.description})"
 								else if !S(desc.description).isEmpty()
 									# replace to description in expanded
-									expanded = "#{descExpanded.beforeDescription}(#{desc.description})"
+									test = @replacePosIfNecessary(descExpanded.beforeDescription, posReplaceString)
+									expanded = "#{test}(#{desc.description})"
 								else
 									expanded = @replacePosIfNecessary(expanded, posReplaceString)
 
@@ -297,7 +298,7 @@ class WorkItemTemp
 	desiredEndtime: null
 	projectString: null
 	posString: null
-	description: null
+	description: ""
 	originalString: null
 	shortCut: null
 
