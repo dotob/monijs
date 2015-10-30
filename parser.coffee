@@ -152,11 +152,11 @@ class WorkDayParser
 							if !endTimeMode
 								# fixup currentEndTime, need to add the dayshiftbreak
 								currentEndTime = currentEndTime.add(this.settings.dayBreakDurationInMinutes / 60)
-						else if @settings.dayBreakTime == lastTime
+						else if @settings.dayBreakTime.is_equal(lastTime)
 							lastTime = lastTime.add(@settings.dayBreakDurationInMinutes / 60)
 							if !endTimeMode
 								currentEndTime = currentEndTime.add(@settings.dayBreakDurationInMinutes / 60)
-					
+						
 					workItem = new WorkItem(lastTime, currentEndTime, workItemTemp.projectString, workItemTemp.posString)
 					if(@insertMetaData)
 						workItem.description = workItemTemp.description;
