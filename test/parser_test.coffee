@@ -478,10 +478,6 @@ describe 'WorkDayParser', () ->
 								 "11111", "111", "", null, "4;11111-111"),
 					new WorkItem(new TimeItem(12,30), new TimeItem(16,30), 
 								 "11111", "111", "", null, "4;11111-111")]
-		console.log "-------------------------"
-		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
-		console.log "Parser: " + JSON.stringify(wd.items)
-		console.log "Should: " + JSON.stringify(expValue)
 
 		should.equal(true, _.isEqual(wd.items, expValue))
 		workItemParserResult.success.should.equals(true)
@@ -496,8 +492,24 @@ describe 'WorkDayParser', () ->
 		wdp.settings = settings		
 
 		workItemParserResult = wdp.parse("8,4;11111-111,-17:00;11111-111", wd, true)
-
-		should.equal(true, false)
-
 		
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(12),
+					"11111", "111", "", null, "4;11111-111"),
+					new WorkItem(new TimeItem(12,30), new TimeItem(17),
+					"11111", "111", "", null, "-17:00;11111-111")]
+
+		console.log "-------------------------"
+		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
+		console.log "Parser: " + JSON.stringify(wd.items)
+		console.log "Should: " + JSON.stringify(expValue)
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '34 WDParser_HoleDayExpansion_UseCompleteString', () ->
+		# wd = new WorkDay(1,1,1,null)
+		# wdp = new WorkDayParser()
+		# settings = new WorkDayParserSettings()
+		# new ShortCut("krank", "8,8;11111-")
+
 
