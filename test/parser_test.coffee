@@ -498,18 +498,117 @@ describe 'WorkDayParser', () ->
 					new WorkItem(new TimeItem(12,30), new TimeItem(17),
 					"11111", "111", "", null, "-17:00;11111-111")]
 
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '34 WDParser_HoleDayExpansion_UseCompleteString', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		ShortCut krank = new ShortCut("krank", "8,8;11111-111(krank)", true)
+		settings.addShortCut(krank)
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("krank", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111", "krank", null, "8;11111-111(krank)")]
+
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '35 WDParser_HoleDayExpansionAndNormalExpansionShareSameKey_ReturnBothExpansions', () ->
+		settings = new WorkDayParserSettings()
+		ShortCut a = new ShortCut("a", "11111-111(b)", false)
+		ShortCut aa = new ShortCut("a", "8,8;11111-111(b)", true)
+		settings.addShortCut(a)
+		settings.addShortCut(aa)
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("a", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111", "b", null, "8;11111-111(b)")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+		workItemParserResult = wdp.parse("8,8;a", wd, true)
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111", "b", a, "8;a")]
+
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '36 WDParser_ShortcutLinkInWorkItem_NormalShortcut', () ->
+		settings = new WorkDayParserSettings()
+		ShortCut a = new ShortCut("a", "11111-111(aa)")
+		settings.addShortCut(a)
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("8,8;a", wd)
+
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+		
+	it '37 WDParser_ShortcutLinkInWorkItem_NormalShortcut_WithBlank', () ->
+		settings = new WorkDayParserSettings()
+		ShortCut a = new ShortCut("a", "11111-111(aa)")
+		settings.addShortCut(a)
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("8,8;a (+blabla)", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111", "aablabla", a, "8;a (+blabla)")]
+		
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '38 WDParser_ShortcutLinkInWorkItem_WholeDayShortcut', () ->
+		settings = new WorkDayParserSettings()
+		ShortCut a = new ShortCut("a", "8,8;11111-111(aa)", true)
+		settings.addShortCut(a)
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("a", wd, true)
+
+		expValue = [new WorkItem(new TimeItem(8), new TimeItem(16),
+					"11111", "111", "aa", null, "8;11111-111(aa)")]
+		
+
+		should.equal(true, _.isEqual(wd.items, expValue))
+		workItemParserResult.success.should.equals(true)
+
+	it '39 WDParser_DestroyBreakWithAbsolutTimes_ShouldGiveError', () ->
+		wd = new WorkDay(1,1,1,null)
+		wdp = new WorkDayParser()
+		settings = new WorkDayParserSettings()
+		settings.insertDayBreak = true
+		settings.dayBreakDurationInMinutes = 30
+		settings.dayBreakTime = new TimeItem(12)
+		wdp.settings = settings
+
+		workItemParserResult = wdp.parse("7:30,-11;11111-111,-11:45;11111-111,-12:15;11111-111,-15;11111-111", wd, true)
+		expValue = ""
+		
 		console.log "-------------------------"
 		console.log "Error #{workItemParserResult.error} | Success: #{workItemParserResult.success}"
 		console.log "Parser: " + JSON.stringify(wd.items)
 		console.log "Should: " + JSON.stringify(expValue)
 		
-		should.equal(true, _.isEqual(wd.items, expValue))
-		workItemParserResult.success.should.equals(true)
-
-	it '34 WDParser_HoleDayExpansion_UseCompleteString', () ->
-		# wd = new WorkDay(1,1,1,null)
-		# wdp = new WorkDayParser()
-		# settings = new WorkDayParserSettings()
-		# new ShortCut("krank", "8,8;11111-")
-
-
+		console.log "Ende"
+		console.log JSON.stringify workItemParserResult

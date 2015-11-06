@@ -38,7 +38,7 @@ class WorkDayParser
 		userInput = S(userInput).replaceAll('\n', '').s
 		
 		#check whole day shortcuts
-		[userInput, wholeDayShortcut] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime(), wholeDayShortcut)
+		[userInput, wholeDayShortcut] = @preProcessWholeDayExpansion(userInput, wdToFill.dateTime())
 		
 		# check for // and remove it (remember it was there)
 		ignoreBreakSettings = userInput.startsWith(automaticPauseDeactivation)
@@ -74,8 +74,8 @@ class WorkDayParser
 							console.log "Strange Error 123"
 							ret.error = error
 							ret.success = false
-							# todo: fail fast??
-
+							# todyo: fail fast??
+					
 					console.log "Temp List: #{JSON.stringify(tmpList)}"
 					resultList = []
 					[resultList, success, error] = @processTempWorkItems(dayStartTime, tmpList, ignoreBreakSettings)
@@ -110,8 +110,11 @@ class WorkDayParser
 	preProcessWholeDayExpansion: (userInput, dateTime) ->
 		if @settings?
 			currentShortcuts = @settings.getValidShortCuts(dateTime)
-			if _.any(currentShortcuts, (sc) -> sc.WholeDayExpansion)
-				dic = _(currentShortcuts).filter((sc) -> sc.WholeDayExpansion).first((sc) -> sc.key == userInput).value
+			console.log "=========="
+			console.log JSON.stringify @settings
+			console.log JSON.stringify currentShortcuts
+			if _.any(currentShortcuts, (sc) -> sc.wholeDayExpansion)
+				dic = _(currentShortcuts).filter((sc) -> sc.wholeDayExpansion).first((sc) -> sc.key == userInput).value()[0]
 				if dic?
 					return [dic.expansion, dic]
 		return [userInput, null]
@@ -132,8 +135,8 @@ class WorkDayParser
 				else
 					endTimeMode = false # if endTimeMode do not add, but substract break!
 					
-					if workItemTemp.desiredEnttime?
-						currentEndTime = workItemTemp.desiredEnttime
+					if workItemTemp.desiredEndtime?
+						currentEndTime = workItemTemp.desiredEndtime
 						endTimeMode = true
 					else
 						currentEndTime = lastTime.add(workItemTemp.hourCount)
@@ -200,7 +203,7 @@ class WorkDayParser
 					ti = TimeItem.parse(timeString.substring(1))
 					if ti?
 						workItem = new WorkItemTemp(wdItemString)
-						workItem.desiredEnttime = ti
+						workItem.desiredEndtime = ti
 					else
 						error = string.Format("Die Endzeit kann nicht erkannt werden: #{timeString}")
 				else
